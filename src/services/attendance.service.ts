@@ -1,5 +1,5 @@
 import { prisma } from "../lib/prisma";
-import { getDistance } from "geolib"; 
+import { getDistance } from "geolib";
 
 const MAX_DISTANCE = 100; // meters
 
@@ -29,33 +29,33 @@ export const clockOut = async (userId: string) => {
 };
 
 export const getDashboardData = async (employeeId: string, date?: string) => {
-    const targetDate = date ? new Date(date) : new Date();
-    const { start, end } = getDayRange(targetDate);
-    // 1. Get Today's Latest Attendance
-    const todayShift = await prisma.attendance.findFirst({
-        where: { employeeId, date: { gte: start, lte: end } },
-        orderBy: { clockIn: 'desc' }
-    });
-    // 2. Count Total Unique Days Worked
-    // Group by date to count distinct days
-    const totalDaysGroup = await prisma.attendance.groupBy({
-        by: ['date'],
-        where: { employeeId },
-    });
-    const daysWorked = totalDaysGroup.length;
-    // 3. Calc Duration (if clocked out)
-    let shiftDuration = null;
-    if (todayShift?.clockOut) {
-        const diff = todayShift.clockOut.getTime() - todayShift.clockIn.getTime();
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        shiftDuration = `${hours}h ${minutes}m`;
-    }
-    return {
-        todayAttendance: todayShift,
-        shiftDuration,
-        daysWorked
-    };
+  const targetDate = date ? new Date(date) : new Date();
+  const { start, end } = getDayRange(targetDate);
+  // 1. Get Today's Latest Attendance
+  const todayShift = await prisma.attendance.findFirst({
+    where: { employeeId, date: { gte: start, lte: end } },
+    orderBy: { clockIn: 'desc' }
+  });
+  // 2. Count Total Unique Days Worked
+  // Group by date to count distinct days
+  const totalDaysGroup = await prisma.attendance.groupBy({
+    by: ['date'],
+    where: { employeeId },
+  });
+  const daysWorked = totalDaysGroup.length;
+  // 3. Calc Duration (if clocked out)
+  let shiftDuration = null;
+  if (todayShift?.clockOut) {
+    const diff = todayShift.clockOut.getTime() - todayShift.clockIn.getTime();
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    shiftDuration = `${hours}h ${minutes}m`;
+  }
+  return {
+    todayAttendance: todayShift,
+    shiftDuration,
+    daysWorked
+  };
 };
 
 export const getAllAttendance = async (outletId: string, page: number, limit: number, date?: string) => {
@@ -97,10 +97,10 @@ const validateEmployeeAndOutlet = async (userId: string) => {
     where: { id: userId },
     include: { outlet: true },
   });
-  
+
   if (!emp) throw new Error("EMPLOYEE_NOT_FOUND");
   if (!emp.outlet) throw new Error("NO_OUTLET_ASSIGNED");
-  
+
   return emp as (typeof emp & { outlet: NonNullable<typeof emp.outlet> });
 };
 
