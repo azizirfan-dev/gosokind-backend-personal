@@ -48,6 +48,9 @@ enum OrderStatus {
   PACKING // Sedang di station packing (atau menunggu dipacking)
 
   WAITING_FOR_PAYMENT // Selesai packing, tapi belum lunas
+
+  ON_HOLD // Problem terjadi (misal: Qty Mismatch), menunggu bypass approval
+
   READY_FOR_DELIVERY // Selesai packing & lunas, siap diambil driver
 
   // Delivery Flow

@@ -67,6 +67,16 @@ export const clockOut = async (req: Request, res: Response) => {
 };
 
 
+export const getAttendanceStatus = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.userId;
+    const status = await attendanceService.getAttendanceStatus(userId);
+    res.json({ success: true, data: status });
+  } catch (error) {
+    handleError(error, res);
+  }
+};
+
 export const getDashboard = async (req: Request, res: Response) => {
   try {
     const { userId, role } = (req as any).user;

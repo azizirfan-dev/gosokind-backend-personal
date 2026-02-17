@@ -8,6 +8,7 @@ router.use(verifyToken);
 
 router.post("/clock-in", attendanceController.clockIn);
 router.post("/clock-out", attendanceController.clockOut);
+router.get("/status", attendanceController.getAttendanceStatus);
 router.get("/dashboard", attendanceController.getDashboard);
 router.get("/", attendanceController.getAllAttendance);
 

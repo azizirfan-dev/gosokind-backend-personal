@@ -1,7 +1,7 @@
 import { prisma } from "../lib/prisma";
 import { getDistance } from "geolib";
 
-const MAX_DISTANCE = 100; // meters
+const MAX_DISTANCE = 200; // meters
 
 // --- PUBLIC METHODS ---
 
@@ -55,6 +55,18 @@ export const getDashboardData = async (employeeId: string, date?: string) => {
     todayAttendance: todayShift,
     shiftDuration,
     daysWorked
+  };
+};
+
+export const getAttendanceStatus = async (userId: string) => {
+  const activeShift = await prisma.attendance.findFirst({
+    where: { employeeId: userId, clockOut: null },
+  });
+
+  return {
+    isClockedIn: !!activeShift,
+    clockInTime: activeShift?.clockIn || null,
+    attendanceId: activeShift?.id || null,
   };
 };
 

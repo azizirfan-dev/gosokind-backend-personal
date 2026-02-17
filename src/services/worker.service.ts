@@ -73,10 +73,24 @@ const validateItemQuantities = (
 ) => {
   if (inputItems.length !== dbItems.length) throw new Error("QTY_MISMATCH");
 
+  const mismatches = [];
+
   for (const inputItem of inputItems) {
     const dbItem = dbItems.find((oi) => oi.laundryItemId === inputItem.laundryItemId);
-    // [cite: 55, 246] Wajib request bypass jika beda
-    if (!dbItem || dbItem.quantity !== inputItem.quantity) throw new Error("QTY_MISMATCH");
+    
+    if (!dbItem || dbItem.quantity !== inputItem.quantity) {
+        mismatches.push({
+            itemId: inputItem.laundryItemId,
+            expected: dbItem?.quantity || 0,
+            actual: inputItem.quantity
+        });
+    }
+  }
+
+  if (mismatches.length > 0) {
+      const error: any = new Error("QTY_MISMATCH");
+      error.details = mismatches;
+      throw error;
   }
 };
 
