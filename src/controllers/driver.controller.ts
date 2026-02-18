@@ -19,6 +19,16 @@ export const checkAvailability = async (req: Request, res: Response) => {
   }
 };
 
+export const getHistory = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.userId;
+    const result = await service.getDriverHistory(userId);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
 export const getActiveJob = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.userId;

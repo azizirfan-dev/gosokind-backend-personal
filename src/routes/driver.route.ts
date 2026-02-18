@@ -12,6 +12,7 @@ router.get("/active", driverController.getActiveJob);
 router.get("/available", driverController.getAvailableJobs);
 
 router.get("/availability", driverController.checkAvailability);
+router.get("/history", driverController.getHistory);
 
 // Pickup Flow
 router.post("/pickup/accept", driverController.acceptPickup);

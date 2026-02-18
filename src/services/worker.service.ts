@@ -34,7 +34,7 @@ export const getWorkerHistory = async (workerId: string, page: number, limit: nu
   const [data, total] = await prisma.$transaction([
     prisma.orderStationProcess.findMany({
       where: { workerId },
-      include: { order: true },
+      include: { order: { include: { orderItems: { include: { laundryItem: true } } } } },
       orderBy: { completedAt: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
@@ -95,10 +95,10 @@ const validateItemQuantities = (
 };
 
 const determineNextStatus = (station: StationType, isPaid: boolean): OrderStatus | null => {
-  if (station === StationType.WASHING) return OrderStatus.IRONING; // [cite: 73]
-  if (station === StationType.IRONING) return OrderStatus.PACKING; // [cite: 75]
+  if (station === StationType.WASHING) return OrderStatus.WASHING; // Output: Ready for Ironing
+  if (station === StationType.IRONING) return OrderStatus.IRONING; // Output: Ready for Packing
   if (station === StationType.PACKING) {
-    return isPaid ? OrderStatus.READY_FOR_DELIVERY : OrderStatus.WAITING_FOR_PAYMENT; // [cite: 248, 249]
+    return isPaid ? OrderStatus.READY_FOR_DELIVERY : OrderStatus.WAITING_FOR_PAYMENT;
   }
   return null;
 };

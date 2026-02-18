@@ -4,6 +4,15 @@ import bcrypt from "bcrypt";
 
 async function main() {
   console.log("🚀 Starting Unified Seeding...");
+  
+  // CLEANUP: Reset data to ensure clean state
+  await prisma.bypassRequest.deleteMany({});
+  await prisma.stationItemCheck.deleteMany({});
+  await prisma.orderStationProcess.deleteMany({});
+  await prisma.orderItem.deleteMany({});
+  await prisma.order.deleteMany({});
+  console.log("🧹 Cleared existing orders and items.");
+
   const password = await bcrypt.hash("123456", 10);
 
   // 1. Create Outlet
@@ -74,8 +83,10 @@ async function main() {
   // 5. Create Test Orders for Feature 3
   
   // ORDER 1: Untuk testing DRIVER (Waiting for Pickup)
-  await prisma.order.create({
-    data: {
+  await prisma.order.upsert({
+    where: { orderNumber: "INV-DRIVER-001" },
+    update: {},
+    create: {
       orderNumber: "INV-DRIVER-001",
       customerId: customer.id,
       addressId: address.id,
@@ -90,12 +101,14 @@ async function main() {
   });
 
   // ORDER 2: Untuk testing WORKER (Ready for Washing)
-  await prisma.order.create({
-    data: {
+  await prisma.order.upsert({
+    where: { orderNumber: "INV-WASH-001" },
+    update: { status: OrderStatus.ARRIVED_AT_OUTLET },
+    create: {
       orderNumber: "INV-WASH-001",
       customerId: customer.id,
       addressId: address.id,
-      status: OrderStatus.WASHING, // Corrected from READY_FOR_WASHING to match schema
+      status: OrderStatus.ARRIVED_AT_OUTLET, 
       orderItems: {
         create: { laundryItemId: itemKaos.id, quantity: 10 }
       }
@@ -103,6 +116,116 @@ async function main() {
   });
 
   console.log("✅ Feature 3 Orders Seeded Successfully.");
+
+  // ORDER 3: Untuk testing DRIVER SINGLE JOB POLICY (Driver has active job)
+  // [DISABLED FOR E2E FLOW TEST] - Uncomment to test blocking
+  /*
+  const driver = await prisma.employee.findUnique({ where: { email: "driver@gosokind.com" } });
+  if (driver) {
+      await prisma.order.upsert({
+        where: { orderNumber: "INV-DRIVER-ACTIVE" },
+        update: {},
+        create: {
+          orderNumber: "INV-DRIVER-ACTIVE",
+          customerId: customer.id,
+          addressId: address.id,
+          status: OrderStatus.PICKUP_ON_THE_WAY,
+          pickupDriverId: driver.id,
+          orderItems: {
+            create: { laundryItemId: itemKaos.id, quantity: 5 }
+          }
+        }
+      });
+      console.log("✅ Seeded Active Job for Driver (Test Blocking Policy)");
+  }
+  */
+
+  // NEW: E2E FLOW ORDER (Full Cycle)
+  await prisma.order.upsert({
+    where: { orderNumber: "INV-FLOW-001" },
+    update: { status: OrderStatus.WAITING_FOR_PICKUP, pickupDriverId: null, deliveryDriverId: null },
+    create: {
+        orderNumber: "INV-FLOW-001",
+        customerId: customer.id,
+        addressId: address.id,
+        status: OrderStatus.WAITING_FOR_PICKUP,
+        orderItems: {
+            create: { laundryItemId: itemKaos.id, quantity: 5 }
+        }
+    }
+  });
+
+  // NEW: DELIVERY FLOW ORDER
+  await prisma.order.upsert({
+    where: { orderNumber: "INV-FLOW-DELIVERY" },
+    update: { status: OrderStatus.READY_FOR_DELIVERY, deliveryDriverId: null },
+    create: {
+        orderNumber: "INV-FLOW-DELIVERY",
+        customerId: customer.id,
+        addressId: address.id,
+        status: OrderStatus.READY_FOR_DELIVERY,
+        isPaid: true,
+        orderItems: {
+            create: { laundryItemId: itemCelana.id, quantity: 3 }
+        }
+    }
+  });
+  console.log("✅ Seeded E2E Flow Orders (INV-FLOW-001, INV-FLOW-DELIVERY)");
+
+  // ORDER 4: Untuk testing WORKER IRONING
+  await prisma.order.upsert({
+    where: { orderNumber: "INV-IRON-001" },
+    update: { status: OrderStatus.WASHING },
+    create: {
+        orderNumber: "INV-IRON-001",
+        customerId: customer.id,
+        addressId: address.id,
+        status: OrderStatus.WASHING,
+        orderItems: {
+            create: { laundryItemId: itemKaos.id, quantity: 5 }
+        }
+    }
+  });
+
+  // ORDER 5: Untuk testing WORKER PACKING
+  await prisma.order.upsert({
+    where: { orderNumber: "INV-PACK-001" },
+    update: { status: OrderStatus.IRONING },
+    create: {
+        orderNumber: "INV-PACK-001",
+        customerId: customer.id,
+        addressId: address.id,
+        status: OrderStatus.IRONING,
+        orderItems: {
+            create: { laundryItemId: itemCelana.id, quantity: 5 }
+        }
+    }
+  });
+
+  // 6. BATCH ORDERS (10 Samples)
+  console.log("📦 Seeding 10 Batch Orders...");
+  for (let i = 1; i <= 10; i++) {
+    const paddedId = i.toString().padStart(3, '0');
+    const isEven = i % 2 === 0;
+    
+    await prisma.order.upsert({
+      where: { orderNumber: `INV-BATCH-${paddedId}` },
+      update: { status: OrderStatus.WAITING_FOR_PICKUP },
+      create: {
+        orderNumber: `INV-BATCH-${paddedId}`,
+        customerId: customer.id,
+        addressId: address.id,
+        status: OrderStatus.WAITING_FOR_PICKUP,
+        orderItems: {
+          create: [
+            { laundryItemId: itemKaos.id, quantity: isEven ? 5 : 2 },
+            { laundryItemId: itemCelana.id, quantity: isEven ? 2 : 5 }
+          ]
+        }
+      }
+    });
+  }
+  console.log("✅ 10 Batch Orders Seeded (INV-BATCH-001 to 010)");
 }
 
 main()
